@@ -47,5 +47,5 @@ coverage.xml
 Thumbs.db
 
 # Project-specific: keep results folder empty in Git
-metaheuristic_analyzer/results/*
-!metaheuristic_analyzer/results/.gitkeep
+results/*
+!results/.gitkeep
