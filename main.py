@@ -1,6 +1,3 @@
-# main.py
-# Ana yürütme scripti - Metasezgisel algoritmaları karşılaştırma
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -21,7 +18,7 @@ from algorithms.de import de
 from algorithms.mpa import mpa
 from algorithms.gto import gto
 from algorithms.run import run
-from algorithms.rime import rime
+from algorithms.rime import rime_improved
 
 # Benchmark fonksiyonlarını import et
 from benchmarks.sphere import sphere
@@ -42,7 +39,7 @@ def run_experiment():
         "MPA": mpa,
         "GTO": gto,
         "RUN": run,
-        "RIME": rime
+        "RIME": rime_improved 
     }
     
     benchmark_functions = {
@@ -142,6 +139,9 @@ def analyze_results(results, algorithms, benchmark_functions):
     print("SONUÇ ANALİZİ VE RAPORLAMA")
     print("=" * 70)
     
+    # Timing analizi için veri
+    timing_data = []
+    
     # Her fonksiyon için analiz
     for func_name in benchmark_functions.keys():
         print(f"\n📊 {func_name} Fonksiyonu İçin Performans Özeti:")
@@ -158,6 +158,16 @@ def analyze_results(results, algorithms, benchmark_functions):
             valid_times = [t for i, t in enumerate(times) if scores[i] != float('inf')]
             
             if valid_scores:
+                # Timing verisini topla
+                timing_data.append({
+                    'Function': func_name,
+                    'Algorithm': alg_name,
+                    'Avg_Time': np.mean(valid_times),
+                    'Std_Time': np.std(valid_times),
+                    'Min_Time': np.min(valid_times),
+                    'Max_Time': np.max(valid_times)
+                })
+                
                 summary_data.append({
                     'Algorithm': alg_name,
                     'Best': np.min(valid_scores),
@@ -165,7 +175,7 @@ def analyze_results(results, algorithms, benchmark_functions):
                     'Mean': np.mean(valid_scores),
                     'Std': np.std(valid_scores),
                     'Median': np.median(valid_scores),
-                    'Avg Time (s)': np.mean(valid_times) if valid_times else 0,
+                    'Avg Time (s)': np.mean(valid_times),
                     'Success Rate': f"{(len(valid_scores) / len(scores)) * 100:.1f}%"
                 })
             else:
@@ -185,14 +195,25 @@ def analyze_results(results, algorithms, benchmark_functions):
         print(df.to_string(index=False, float_format='%.4e'))
         
         # CSV olarak kaydet
-        csv_filename = os.path.join(RESULTS_DIR, f"{SUMMARY_FILE_PREFIX}{func_name.lower()}.csv")
+        csv_filename = os.path.join(RESULTS_DIR, f"performance_summary_{func_name.lower()}.csv")
         df.to_csv(csv_filename, index=False)
         print(f"💾 Özet tablo kaydedildi: {csv_filename}")
+    
+    # Timing analizini kaydet
+    if timing_data:
+        timing_df = pd.DataFrame(timing_data)
+        timing_file = os.path.join(RESULTS_DIR, "computation_timing.csv")
+        timing_df.to_csv(timing_file, index=False)
+        print(f"💾 Zamanlama analizi kaydedildi: {timing_file}")
 
 def create_convergence_plots(results, algorithms, benchmark_functions):
     """Yakınsama grafikleri oluştur"""
     
     print("\n📈 GÖRSELLEŞTİRME - Yakınsama Grafikleri")
+    
+    # Yakınsama grafikleri klasörünü oluştur
+    convergence_dir = os.path.join(RESULTS_DIR, "convergence_plots")
+    os.makedirs(convergence_dir, exist_ok=True)
     
     for func_name in benchmark_functions.keys():
         plt.figure(figsize=FIGURE_SIZE)
@@ -213,9 +234,10 @@ def create_convergence_plots(results, algorithms, benchmark_functions):
                 alg_config = ALGORITHMS.get(alg_name, {})
                 color = alg_config.get('color', None)
                 marker = alg_config.get('marker', None)
+                linestyle = alg_config.get('linestyle', '-')
                 
                 plt.plot(avg_convergence, label=alg_name, linewidth=2, 
-                        color=color, marker=marker, markevery=50)
+                        color=color, marker=marker, markevery=50, linestyle=linestyle)
         
         plt.title(f'{func_name} Fonksiyonu - Yakınsama Eğrileri', 
                  fontsize=14, fontweight='bold')
@@ -226,10 +248,50 @@ def create_convergence_plots(results, algorithms, benchmark_functions):
         plt.yscale('log')
         
         # Grafiği kaydet
-        plot_filename = os.path.join(RESULTS_DIR, f"{CONVERGENCE_FILE_PREFIX}{func_name.lower()}.png")
+        plot_filename = os.path.join(convergence_dir, f"{func_name.lower()}_convergence.png")
         plt.savefig(plot_filename, dpi=DPI, bbox_inches='tight')
         plt.close()
         print(f"💾 Yakınsama grafiği kaydedildi: {plot_filename}")
+
+def create_boxplots(results, algorithms, benchmark_functions):
+    """Kutu grafikleri oluştur"""
+    
+    print("\n📊 GÖRSELLEŞTİRME - Kutu Grafikleri")
+    
+    # Kutu grafikleri klasörünü oluştur
+    boxplot_dir = os.path.join(RESULTS_DIR, "boxplots")
+    os.makedirs(boxplot_dir, exist_ok=True)
+    
+    for func_name in benchmark_functions.keys():
+        plt.figure(figsize=FIGURE_SIZE)
+        
+        # Veriyi hazırla
+        data = []
+        labels = []
+        
+        for alg_name in algorithms.keys():
+            scores = results[func_name][alg_name]['best_scores']
+            valid_scores = [s for s in scores if s != float('inf')]
+            
+            if valid_scores:
+                data.append(valid_scores)
+                labels.append(alg_name)
+        
+        # Kutu grafiği oluştur
+        plt.boxplot(data, labels=labels, patch_artist=True)
+        plt.title(f'{func_name} Fonksiyonu - Performans Dağılımları', 
+                 fontsize=14, fontweight='bold')
+        plt.xlabel('Algoritmalar', fontsize=12)
+        plt.ylabel('Fitness Değerleri', fontsize=12)
+        plt.xticks(rotation=45)
+        plt.grid(True, alpha=0.3)
+        plt.yscale('log')
+        
+        # Grafiği kaydet
+        plot_filename = os.path.join(boxplot_dir, f"{func_name.lower()}_boxplot.png")
+        plt.savefig(plot_filename, dpi=DPI, bbox_inches='tight')
+        plt.close()
+        print(f"💾 Kutu grafiği kaydedildi: {plot_filename}")
 
 def statistical_analysis(results, algorithms, benchmark_functions):
     """İstatistiksel analiz yap"""
@@ -279,7 +341,7 @@ def statistical_analysis(results, algorithms, benchmark_functions):
                     test_results.append(f"{alg_name}: Veri uyumsuz")
         
         # İstatistiksel sonuçları dosyaya yaz
-        stats_filename = os.path.join(RESULTS_DIR, f"{STATS_FILE_PREFIX}{func_name.lower()}.txt")
+        stats_filename = os.path.join(RESULTS_DIR, f"statistical_analysis_{func_name.lower()}.txt")
         with open(stats_filename, 'w', encoding='utf-8') as f:
             f.write(f"{func_name} Fonksiyonu İstatistiksel Analiz Sonuçları\n")
             f.write("=" * 50 + "\n\n")
@@ -305,6 +367,7 @@ def main():
         
         # Grafikleri oluştur
         create_convergence_plots(results, algorithms, benchmark_functions)
+        create_boxplots(results, algorithms, benchmark_functions)
         
         # İstatistiksel analiz yap
         statistical_analysis(results, algorithms, benchmark_functions)
