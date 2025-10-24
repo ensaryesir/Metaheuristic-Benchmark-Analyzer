@@ -4,9 +4,22 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 import numpy as np
 
-def de(objective_func, dim, bounds, pop_size, max_iter, F=0.5, CR=0.9):
-    """
+"""
     Differential Evolution (DE/rand/1/bin) algoritması
+    
+    ⚡ Algoritma Özellikleri:
+    - Strateji: DE/rand/1/bin (en yaygın varyant)
+    - Güçlü Yönler: Basit, etkili, az parametre, multimodal performans
+    - Zayıf Yönler: Parametre hassasiyeti
+    
+    🔧 Parametre Tavsiyeleri:
+    - F = 0.5 (Standart), Zor problemler için: 0.8
+    - CR = 0.9 (Standart), Keşif için: 0.5-0.7
+    
+    Orijinal Makale:
+    Storn, R., & Price, K. (1997). 
+    "Differential Evolution – A Simple and Efficient Heuristic for global Optimization over Continuous Spaces"
+    Journal of Global Optimization, 11(4), 341–359.
     
     Args:
         objective_func: Optimize edilecek fonksiyon
@@ -19,7 +32,9 @@ def de(objective_func, dim, bounds, pop_size, max_iter, F=0.5, CR=0.9):
         
     Returns:
         tuple: (best_solution, best_fitness, convergence_curve)
-    """
+"""
+
+def de(objective_func, dim, bounds, pop_size, max_iter, F=0.5, CR=0.9):
     
     # Sınırları standartlaştır
     if isinstance(bounds, tuple):
@@ -91,32 +106,55 @@ def de(objective_func, dim, bounds, pop_size, max_iter, F=0.5, CR=0.9):
 
 # Test kodu
 if __name__ == "__main__":
-    # Test fonksiyonu olarak sphere kullan
+    # Test edilecek benchmark fonksiyonlarını ve sınırlarını içe aktar
     from benchmarks.sphere import sphere
-    
-    # Algoritma parametreleri
+    from benchmarks.rastrigin import rastrigin
+    from benchmarks.ackley import ackley
+
+    # Genel algoritma parametreleri
     dim = 10
-    bounds = (-5.12, 5.12)
     pop_size = 50
-    max_iter = 500
-    
-    print("DE Algorithm Test - Sphere Function")
-    print("=" * 40)
-    
-    best_solution, best_fitness, convergence = de(
-        objective_func=sphere,
-        dim=dim,
-        bounds=bounds,
-        pop_size=pop_size,
-        max_iter=max_iter,
-        F=0.5,
-        CR=0.9
-    )
-    
-    print(f"\nResults:")
-    print(f"Best Solution: {best_solution}")
-    print(f"Best Fitness: {best_fitness:.8f}")
-    print(f"Final Convergence: {convergence[-1]:.8f}")
-    
-    # İlk ve son fitness karşılaştırması
-    print(f"Improvement: {convergence[0]:.4f} → {convergence[-1]:.8f}")
+    # Zorlu fonksiyonlar için iterasyon sayısını artırmak iyi bir pratiktir
+    max_iter = 1000
+    F = 0.5
+    CR = 0.9
+
+    # Test edilecek fonksiyonları, isimlerini ve standart arama sınırlarını bir listede topla
+    benchmarks_to_test = [
+        {
+            "name": "Sphere",
+            "func": sphere,
+            "bounds": (-5.12, 5.12)
+        },
+        {
+            "name": "Rastrigin",
+            "func": rastrigin,
+            "bounds": (-5.12, 5.12)
+        },
+        {
+            "name": "Ackley",
+            "func": ackley,
+            "bounds": (-32.768, 32.768)
+        }
+    ]
+
+    # Her bir benchmark fonksiyonu için DE algoritmasını çalıştır
+    for benchmark in benchmarks_to_test:
+        print(f"\nDE Algorithm Test - {benchmark['name']} Function")
+        print("=" * 40)
+        
+        best_solution, best_fitness, convergence = de(
+            objective_func=benchmark['func'],
+            dim=dim,
+            bounds=benchmark['bounds'],
+            pop_size=pop_size,
+            max_iter=max_iter,
+            F=F,
+            CR=CR
+        )
+        
+        print(f"\nResults for {benchmark['name']}:")
+        print(f"Best Solution (first 4 dims): {best_solution[:4]}")
+        print(f"Best Fitness: {best_fitness:.8f}")
+        print(f"Improvement: {convergence[0]:.4f} → {convergence[-1]:.8f}")
+        print("-" * 40)

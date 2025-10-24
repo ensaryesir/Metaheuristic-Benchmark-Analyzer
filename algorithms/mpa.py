@@ -5,17 +5,22 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import numpy as np
 import math
 
-def mpa(objective_func, dim, bounds, pop_size, max_iter, P=0.5, FADs=0.2):
-    """
-    Marine Predators Algorithm (MPA) - Orijinal Implementasyon
+"""
+    Marine Predators Algorithm (MPA) algoritması
+    
+    ⚡ Algoritma Özellikleri:
+    - Temel Fikir: Deniz predatörlerinin avlanma stratejileri
+    - Güçlü Yönler: 3 fazlı yapı, Levy flight, FADs etkisi
+    - Zayıf Yönler: Karmaşık implementasyon
+    
+    🔧 Parametre Tavsiyeleri:
+    - P = 0.5 (Orijinal makale)
+    - FADs = 0.2 (Orijinal makale)
     
     Orijinal Makale:
     Faramarzi, A., Heidarinejad, M., Mirjalili, S., & Gandomi, A. H. (2020).
     "Marine Predators Algorithm: A nature-inspired metaheuristic"
     Expert Systems with Applications, 152, 113377.
-    
-    DOI: https://doi.org/10.1016/j.eswa.2020.113377
-    URL: https://www.sciencedirect.com/science/article/abs/pii/S0957417420304265
     
     Args:
         objective_func: Optimize edilecek fonksiyon
@@ -28,7 +33,9 @@ def mpa(objective_func, dim, bounds, pop_size, max_iter, P=0.5, FADs=0.2):
         
     Returns:
         tuple: (best_solution, best_fitness, convergence_curve)
-    """
+"""
+
+def mpa(objective_func, dim, bounds, pop_size, max_iter, P=0.5, FADs=0.2):
     
     # Sınırları standartlaştır
     if isinstance(bounds, tuple):
@@ -163,34 +170,64 @@ def levy_flight(n, dim):
 
 # Test kodu
 if __name__ == "__main__":
-    # Test fonksiyonu olarak sphere kullan
+    # Test edilecek benchmark fonksiyonlarını ve sınırlarını içe aktar
     from benchmarks.sphere import sphere
-    
-    # Algoritma parametreleri
+    from benchmarks.rastrigin import rastrigin
+    from benchmarks.ackley import ackley
+
+    # Genel algoritma parametreleri
     dim = 10
-    bounds = (-5.12, 5.12)
     pop_size = 30
-    max_iter = 500
+    max_iter = 1000
     
-    print("MPA Algorithm (Original) Test - Sphere Function")
-    print("=" * 50)
-    
-    best_solution, best_fitness, convergence = mpa(
-        objective_func=sphere,
-        dim=dim,
-        bounds=bounds,
-        pop_size=pop_size,
-        max_iter=max_iter,
-        P=0.5,
-        FADs=0.2
-    )
-    
-    print(f"\nResults:")
-    print(f"Best Solution: {best_solution[:5]}...")
-    print(f"Best Fitness: {best_fitness:.10f}")
-    print(f"Final Convergence: {convergence[-1]:.10f}")
-    
-    # Yakınsama analizi
-    print(f"Initial Best: {convergence[0]:.4f}")
-    print(f"Final Best: {convergence[-1]:.10f}")
-    print(f"Improvement: {convergence[0] / convergence[-1] if convergence[-1] != 0 else 'N/A':.2e}x")
+    # MPA parametreleri (orijinal makaleye göre)
+    P = 0.5      # Sabit parametre
+    FADs = 0.2   # Fish Aggregating Devices etkisi
+
+    # Test edilecek fonksiyonları, isimlerini ve standart arama sınırlarını bir listede topla
+    benchmarks_to_test = [
+        {
+            "name": "Sphere",
+            "func": sphere,
+            "bounds": (-5.12, 5.12)
+        },
+        {
+            "name": "Rastrigin", 
+            "func": rastrigin,
+            "bounds": (-5.12, 5.12)
+        },
+        {
+            "name": "Ackley",
+            "func": ackley,
+            "bounds": (-32.768, 32.768)
+        }
+    ]
+
+    # Her bir benchmark fonksiyonu için MPA algoritmasını çalıştır
+    for benchmark in benchmarks_to_test:
+        print(f"\nMPA Algorithm Test - {benchmark['name']} Function")
+        print("=" * 50)
+        
+        best_solution, best_fitness, convergence = mpa(
+            objective_func=benchmark['func'],
+            dim=dim,
+            bounds=benchmark['bounds'],
+            pop_size=pop_size,
+            max_iter=max_iter,
+            P=P,
+            FADs=FADs
+        )
+        
+        print(f"\nResults for {benchmark['name']}:")
+        print(f"Best Solution (first 5 dims): {best_solution[:5]}")
+        print(f"Best Fitness: {best_fitness:.10f}")
+        print(f"Improvement: {convergence[0]:.4f} → {convergence[-1]:.10f}")
+        
+        # Yakınsama analizi
+        if convergence[-1] != 0:
+            improvement_ratio = convergence[0] / convergence[-1]
+            print(f"Improvement Ratio: {improvement_ratio:.2e}x")
+        else:
+            print(f"Improvement Ratio: Optimal solution found!")
+        
+        print("-" * 50)

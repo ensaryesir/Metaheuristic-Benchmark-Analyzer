@@ -4,9 +4,22 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 import numpy as np
 
-def pso(objective_func, dim, bounds, pop_size, max_iter, w=0.9, c1=2.0, c2=2.0):
-    """
+"""
     Particle Swarm Optimization (PSO) algoritması
+    
+    ⚡ Algoritma Özellikleri:
+    - Temel Fikir: Kuş sürüsü ve balık sürüsü davranışları
+    - Güçlü Yönler: Hızlı yakınsama, sezgisel anlaşılırlık
+    - Zayıf Yönler: Erken yakınsama, parametre hassasiyeti
+    
+    🔧 Parametre Tavsiyeleri:
+    - w = 0.9 → 0.4 (lineer azalma)
+    - c1, c2 = 2.0 (Standart), Keşif için: c1=2.5, c2=1.5
+    
+    Orijinal Makale:
+    Kennedy, J., & Eberhart, R. (1995). 
+    "Particle Swarm Optimization"
+    Proceedings of ICNN'95 - International Conference on Neural Networks.
     
     Args:
         objective_func: Optimize edilecek fonksiyon
@@ -20,7 +33,9 @@ def pso(objective_func, dim, bounds, pop_size, max_iter, w=0.9, c1=2.0, c2=2.0):
         
     Returns:
         tuple: (best_solution, best_fitness, convergence_curve)
-    """
+"""
+
+def pso(objective_func, dim, bounds, pop_size, max_iter, w=0.9, c1=2.0, c2=2.0):
     
     # Sınırları standartlaştır
     if isinstance(bounds, tuple):
@@ -101,32 +116,66 @@ def pso(objective_func, dim, bounds, pop_size, max_iter, w=0.9, c1=2.0, c2=2.0):
 
 # Test kodu
 if __name__ == "__main__":
-    # Test fonksiyonu olarak sphere kullan
+    # Test edilecek benchmark fonksiyonlarını ve sınırlarını içe aktar
     from benchmarks.sphere import sphere
-    
-    # Algoritma parametreleri
+    from benchmarks.rastrigin import rastrigin
+    from benchmarks.ackley import ackley
+
+    # Genel algoritma parametreleri
     dim = 10
-    bounds = (-5.12, 5.12)
     pop_size = 30
-    max_iter = 500
+    max_iter = 1000
     
-    print("PSO Algorithm Test - Sphere Function")
-    print("=" * 40)
-    
-    best_solution, best_fitness, convergence = pso(
-        objective_func=sphere,
-        dim=dim,
-        bounds=bounds,
-        pop_size=pop_size,
-        max_iter=max_iter
-    )
-    
-    print(f"\nResults:")
-    print(f"Best Solution: {best_solution[:5]}...")  # İlk 5 değeri göster
-    print(f"Best Fitness: {best_fitness:.10f}")
-    print(f"Final Convergence: {convergence[-1]:.10f}")
-    
-    # Yakınsama analizi
-    print(f"Initial Best: {convergence[0]:.4f}")
-    print(f"Final Best: {convergence[-1]:.10f}")
-    print(f"Improvement: {convergence[0] / convergence[-1] if convergence[-1] != 0 else 'N/A':.2e}x")
+    # PSO parametreleri
+    w = 0.9      # Atalet katsayısı
+    c1 = 2.0     # Bilişsel katsayı
+    c2 = 2.0     # Sosyal katsayı
+
+    # Test edilecek fonksiyonları, isimlerini ve standart arama sınırlarını bir listede topla
+    benchmarks_to_test = [
+        {
+            "name": "Sphere",
+            "func": sphere,
+            "bounds": (-5.12, 5.12)
+        },
+        {
+            "name": "Rastrigin", 
+            "func": rastrigin,
+            "bounds": (-5.12, 5.12)
+        },
+        {
+            "name": "Ackley",
+            "func": ackley,
+            "bounds": (-32.768, 32.768)
+        }
+    ]
+
+    # Her bir benchmark fonksiyonu için PSO algoritmasını çalıştır
+    for benchmark in benchmarks_to_test:
+        print(f"\nPSO Algorithm Test - {benchmark['name']} Function")
+        print("=" * 50)
+        
+        best_solution, best_fitness, convergence = pso(
+            objective_func=benchmark['func'],
+            dim=dim,
+            bounds=benchmark['bounds'],
+            pop_size=pop_size,
+            max_iter=max_iter,
+            w=w,
+            c1=c1,
+            c2=c2
+        )
+        
+        print(f"\nResults for {benchmark['name']}:")
+        print(f"Best Solution (first 5 dims): {best_solution[:5]}")
+        print(f"Best Fitness: {best_fitness:.10f}")
+        print(f"Improvement: {convergence[0]:.4f} → {convergence[-1]:.10f}")
+        
+        # Yakınsama analizi
+        if convergence[-1] != 0:
+            improvement_ratio = convergence[0] / convergence[-1]
+            print(f"Improvement Ratio: {improvement_ratio:.2e}x")
+        else:
+            print(f"Improvement Ratio: Optimal solution found!")
+        
+        print("-" * 50)
