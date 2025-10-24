@@ -22,8 +22,8 @@ if __name__ == "__main__":
     
     # Başka bir test noktası
     test_point2 = np.array([1.0, 1.0, 1.0])
-    print(f"Rastrigin(1,1,1) = {rastrigin(test_point2):.6f}")  # ~13.0 çıkmalı
+    print(f"Rastrigin(1,1,1) = {rastrigin(test_point2):.6f}")  # 3.0 çıkmalı
     
     # Sınır testi
     test_point3 = np.array([2.0, 2.0, 2.0])
-    print(f"Rastrigin(2,2,2) = {rastrigin(test_point3):.6f}")
+    print(f"Rastrigin(2,2,2) = {rastrigin(test_point3):.6f}")  # 12.0 çıkmalı
